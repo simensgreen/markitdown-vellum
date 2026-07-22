@@ -10,7 +10,9 @@
   "dependencies": {
     "markitdown-js": "0.0.14"
   },
-  "vellum": {},
+  "vellum": {
+    "icon": "📄"
+  },
   "devDependencies": {
     "@types/node": "^22.15.21",
     "@vellumai/plugin-api": "^0.10.11",
