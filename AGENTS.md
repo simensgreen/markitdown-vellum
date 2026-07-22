@@ -8,7 +8,7 @@ Vellum Assistant plugin: one stateless tool `markitdown` using `@cognipeer/to-ma
 - `src/convert.ts` — conversion logic (not walked by plugin loader)
 - `src/ocr-options.ts` — cognipeer `ocr` options per `visionMode`
 - `src/vellum-ocr-fetch.ts` — `fetch` monkeypatch: routes cognipeer `custom-vlm` to `getConfiguredProvider("vision")`
-- `src/path-validation.ts` — workspace path resolution, URL rejection, extension allowlist
+- Path validation: `workingDir` from tool context is trusted; `resolveWorkspacePath` realpaths the file and checks containment (rejects symlink escapes)
 - `src/supported-extensions.ts` — allowlist from cognipeer `FileExtension` (excludes plain text + audio) + `formatMarkitdownToolDescription()`
 - `src/ctx.ts` — `CTX` singleton (`cfg`, `log`) and `throwLogged()`
 - `src/plugin-config.ts` — `Cfg` interface + `DEFAULT_CFG` (no runtime parsing)

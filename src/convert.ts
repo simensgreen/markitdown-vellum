@@ -1,8 +1,10 @@
 import { convertToMarkdown } from "@cognipeer/to-markdown";
+import { extname } from "node:path";
 import {
   assertReadableWorkspaceFile,
   resolveWorkspacePath,
 } from "./path-validation.js";
+import { assertSupportedFileExtension } from "./supported-extensions.js";
 import { buildCognipeerOcrOptions } from "./ocr-options.js";
 import {
   vellumOcrFetchPatchNeeded,
@@ -22,7 +24,9 @@ export async function convertDocument(
   workingDir: string,
   signal: AbortSignal,
 ): Promise<string> {
-  const resolvedPath = resolveWorkspacePath(path, workingDir);
+  assertSupportedFileExtension(extname(path));
+
+  const resolvedPath = await resolveWorkspacePath(path, workingDir);
   await assertReadableWorkspaceFile(resolvedPath);
 
   if (signal.aborted) {

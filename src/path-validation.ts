@@ -1,12 +1,34 @@
-import { access } from "node:fs/promises";
+import { access, realpath } from "node:fs/promises";
 import { constants } from "node:fs";
-import { extname, isAbsolute, relative, resolve } from "node:path";
+import { isAbsolute, relative, resolve } from "node:path";
 import { throwLogged } from "./ctx.js";
-import { assertSupportedFileExtension } from "./supported-extensions.js";
 
-function resolvePathInsideWorkspace(
+async function resolveRealPath(
+  path: string,
+  errorMessage: string,
+): Promise<string> {
+  try {
+    return await realpath(path);
+  } catch (error) {
+    throwLogged(errorMessage, { path, error });
+  }
+}
+
+
+/** Standard containment check (no Node/Bun stdlib equivalent). */
+function isPathInside(parent: string, candidate: string): boolean {
+  const pathFromParent = relative(parent, candidate);
+  return (
+    pathFromParent !== "" &&
+    !pathFromParent.startsWith("..") &&
+    !isAbsolute(pathFromParent) &&
+    resolve(parent, pathFromParent) === candidate
+  );
+}
+
+function resolveCandidatePath(
   filePath: string,
-  workingDir: string,
+  workspaceRoot: string,
 ): string {
   const trimmedPath = filePath.trim();
   if (trimmedPath.length === 0) {
@@ -18,31 +40,31 @@ function resolvePathInsideWorkspace(
     });
   }
 
-  const resolvedPath = isAbsolute(trimmedPath)
+  return isAbsolute(trimmedPath)
     ? resolve(trimmedPath)
-    : resolve(workingDir, trimmedPath);
+    : resolve(workspaceRoot, trimmedPath);
+}
 
-  const pathInsideWorkspace = relative(workingDir, resolvedPath);
-  if (
-    pathInsideWorkspace.startsWith("..") ||
-    isAbsolute(pathInsideWorkspace)
-  ) {
+export async function resolveWorkspacePath(
+  filePath: string,
+  workspaceRoot: string,
+): Promise<string> {
+  const candidatePath = resolveCandidatePath(filePath, workspaceRoot);
+
+  const resolvedPath = await resolveRealPath(
+    candidatePath,
+    "File is not readable.",
+  );
+
+  if (!isPathInside(workspaceRoot, resolvedPath)) {
     throwLogged("Path must be inside the workspace.", {
-      filePath: trimmedPath,
-      workingDir,
+      filePath,
+      candidatePath,
       resolvedPath,
+      workspaceRoot,
     });
   }
 
-  return resolvedPath;
-}
-
-export function resolveWorkspacePath(
-  filePath: string,
-  workingDir: string,
-): string {
-  const resolvedPath = resolvePathInsideWorkspace(filePath, workingDir);
-  assertSupportedFileExtension(extname(resolvedPath));
   return resolvedPath;
 }
 
