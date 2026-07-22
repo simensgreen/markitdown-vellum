@@ -1,10 +1,10 @@
-import { access } from "node:fs/promises";
+import { access, mkdir, writeFile } from "node:fs/promises";
 import { constants } from "node:fs";
-import { extname, isAbsolute, relative, resolve } from "node:path";
+import { dirname, extname, isAbsolute, relative, resolve } from "node:path";
 import { throwLogged } from "./ctx.js";
 import { assertSupportedFileExtension } from "./supported-extensions.js";
 
-export function resolveWorkspacePath(
+function resolvePathInsideWorkspace(
   filePath: string,
   workingDir: string,
 ): string {
@@ -34,9 +34,23 @@ export function resolveWorkspacePath(
     });
   }
 
-  assertSupportedFileExtension(extname(resolvedPath));
-
   return resolvedPath;
+}
+
+export function resolveWorkspacePath(
+  filePath: string,
+  workingDir: string,
+): string {
+  const resolvedPath = resolvePathInsideWorkspace(filePath, workingDir);
+  assertSupportedFileExtension(extname(resolvedPath));
+  return resolvedPath;
+}
+
+export function resolveWorkspaceOutputPath(
+  filePath: string,
+  workingDir: string,
+): string {
+  return resolvePathInsideWorkspace(filePath, workingDir);
 }
 
 export async function assertReadableWorkspaceFile(
@@ -46,5 +60,17 @@ export async function assertReadableWorkspaceFile(
     await access(resolvedPath, constants.R_OK);
   } catch (error) {
     throwLogged("File is not readable.", { resolvedPath, error });
+  }
+}
+
+export async function writeWorkspaceMarkdown(
+  resolvedPath: string,
+  markdown: string,
+): Promise<void> {
+  try {
+    await mkdir(dirname(resolvedPath), { recursive: true });
+    await writeFile(resolvedPath, markdown, "utf8");
+  } catch (error) {
+    throwLogged("Failed to write markdown output.", { resolvedPath, error });
   }
 }

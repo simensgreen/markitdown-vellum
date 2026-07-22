@@ -13,7 +13,7 @@ Vellum Assistant plugin: one stateless tool `markitdown` using `markitdown-js`.
 - `src/plugin-config.ts` — `Cfg` interface + `DEFAULT_CFG` (no runtime parsing)
 - `hooks/init.ts` — `Object.assign(CTX.cfg, context.config)`; sets `CTX.log` from `InitContext.logger`
 - `config.json` — user-editable settings; host reads it and passes JSON to `hooks/init.ts` via `InitContext.config`
-- Input: workspace `path` only — no URLs, no audio/video, no plain-text/source files
+- Input: workspace `path` (source file); optional `targetPath` writes markdown to disk and returns `written to <targetPath>` instead of the body
 
 ## Install target
 
