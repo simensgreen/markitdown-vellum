@@ -2,17 +2,19 @@
 
 A [Vellum Assistant](https://www.vellum.ai/) plugin that lets the model read office documents, PDFs, spreadsheets, presentations, notebooks, archives, and similar files as markdown — without you opening or copying them by hand.
 
-Built on [markitdown-js](https://www.npmjs.com/package/markitdown-js).
+Built on [@cognipeer/to-markdown](https://www.npmjs.com/package/@cognipeer/to-markdown).
 
 ## What it does
 
 Adds one tool, **`markitdown`**, to the assistant. The model can point it at a file in the workspace and get back extracted text: headings, tables, slide content, sheet data, email bodies, and image descriptions where applicable.
 
-Use it when a conversation needs content from a `.pdf`, `.docx`, `.xlsx`, `.pptx`, `.html`, `.ipynb`, `.zip`, Outlook `.msg`, or image-based document — formats the model cannot read natively.
+Scanned PDFs and images are OCR'd via the workspace vision model (`visionMode: "vellum"`) or bundled Tesseract.js (`visionMode: "tesseract"`).
 
-Plain text, markdown, and source code are **not** in scope; the model already reads those directly. Remote URLs, audio, and video are **not** supported either.
+Use it when a conversation needs content from office documents, PDFs, spreadsheets, presentations, notebooks, archives
 
-**Supported extensions:** `.atom`, `.docx`, `.htm`, `.html`, `.ipynb`, `.jpeg`, `.jpg`, `.msg`, `.pdf`, `.png`, `.pptx`, `.rss`, `.xls`, `.xlsx`, `.xml`, `.zip`.
+Plain text and audio are **not** in scope (excluded from cognipeer's `FileExtension` list)
+
+Supported extensions follow `@cognipeer/to-markdown` `FileExtension`, except `.txt`, `.mp3`, and `.wav`.
 
 ## Install
 
@@ -25,11 +27,10 @@ Edit `config.json` in the plugin directory (preserved on upgrade). Omitted keys 
 | Field | Default | Description |
 | --- | --- | --- |
 | `documentTimeoutMs` | `120000` | Max time for a single conversion (ms) |
-| `visionMode` | `"vellum"` | `"vellum"` — describe images via the workspace vision model; `"tesseract"` — OCR only, no LLM |
-| `visionTimeoutMs` | `60000` | Max time for a vision LLM call (ms) |
-| `visionSystemPrompt` | see `config.json` | System prompt when describing images |
-| `visionDefaultUserPrompt` | see `config.json` | User prompt when markitdown-js does not supply one |
+| `visionMode` | `"vellum"` | `"vellum"` — OCR via workspace vision (cognipeer `custom-vlm` + fetch patch); `"tesseract"` — OCR via bundled Tesseract.js |
+| `visionSystemPrompt` | see `config.json` | System prompt for vision OCR |
+| `visionDefaultUserPrompt` | see `config.json` | User prompt sent to the vision model (also cognipeer `vlm.prompt`) |
 
 ## Optional system dependency
 
-[Tesseract](https://github.com/tesseract-ocr/tesseract) — OCR fallback for images when no vision model is configured.
+None for Tesseract mode — `@cognipeer/to-markdown` ships `tesseract.js`. PDF page rendering uses the native `canvas` module (installed automatically).

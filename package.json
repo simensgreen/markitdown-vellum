@@ -1,14 +1,11 @@
 {
   "name": "markitdown-vellum",
-  "version": "0.1.1",
-  "description": "Vellum plugin: convert documents to markdown using markitdown-js",
+  "version": "0.2.0",
+  "description": "Vellum plugin: convert documents to markdown using @cognipeer/to-markdown",
   "type": "module",
   "private": true,
   "peerDependencies": {
     "@vellumai/plugin-api": "^0.8.0"
-  },
-  "dependencies": {
-    "markitdown-js": "0.0.14"
   },
   "vellum": {
     "icon": "📄"
@@ -17,5 +14,8 @@
     "@types/node": "^22.15.21",
     "@vellumai/plugin-api": "^0.10.11",
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@cognipeer/to-markdown": "^3.1.0"
   }
 }

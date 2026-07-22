@@ -1,28 +1,20 @@
+import { FileExtension } from "@cognipeer/to-markdown";
 import { throwLogged } from "./ctx.js";
 
-const SUPPORTED_EXTENSIONS = [
-  ".atom",
-  ".docx",
-  ".htm",
-  ".html",
-  ".ipynb",
-  ".jpeg",
-  ".jpg",
-  ".msg",
-  ".pdf",
-  ".png",
-  ".pptx",
-  ".rss",
-  ".xls",
-  ".xlsx",
-  ".xml",
-  ".zip",
-] as const;
+const EXCLUDED_EXTENSIONS = new Set<string>([
+  FileExtension.TXT,
+  FileExtension.MP3,
+  FileExtension.WAV,
+]);
+
+const SUPPORTED_EXTENSIONS: readonly string[] = Object.values(
+  FileExtension,
+).filter((extension) => !EXCLUDED_EXTENSIONS.has(extension));
 
 const SUPPORTED_EXTENSION_SET: Set<string> = new Set(SUPPORTED_EXTENSIONS);
 
 export function formatSupportedExtensionsList(): string {
-  return SUPPORTED_EXTENSIONS.join(", ");
+  return [...SUPPORTED_EXTENSIONS].sort().join(", ");
 }
 
 export function formatMarkitdownToolDescription(): string {

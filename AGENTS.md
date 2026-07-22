@@ -1,19 +1,20 @@
 # markitdown-vellum
 
-Vellum Assistant plugin: one stateless tool `markitdown` using `markitdown-js`.
+Vellum Assistant plugin: one stateless tool `markitdown` using `@cognipeer/to-markdown`.
 
 ## Scope
 
 - `tools/markitdown.ts` — tool surface (default export, loaded by host)
 - `src/convert.ts` — conversion logic (not walked by plugin loader)
-- `src/vision-llm.ts` — markitdown-js `llmCall` bridged to `getConfiguredProvider("vision")`
+- `src/ocr-options.ts` — cognipeer `ocr` options per `visionMode`
+- `src/vellum-ocr-fetch.ts` — `fetch` monkeypatch: routes cognipeer `custom-vlm` to `getConfiguredProvider("vision")`
 - `src/path-validation.ts` — workspace path resolution, URL rejection, extension allowlist
-- `src/supported-extensions.ts` — allowlist + `formatMarkitdownToolDescription()`
+- `src/supported-extensions.ts` — allowlist from cognipeer `FileExtension` (excludes plain text + audio) + `formatMarkitdownToolDescription()`
 - `src/ctx.ts` — `CTX` singleton (`cfg`, `log`) and `throwLogged()`
 - `src/plugin-config.ts` — `Cfg` interface + `DEFAULT_CFG` (no runtime parsing)
 - `hooks/init.ts` — `Object.assign(CTX.cfg, context.config)`; sets `CTX.log` from `InitContext.logger`
 - `config.json` — user-editable settings; host reads it and passes JSON to `hooks/init.ts` via `InitContext.config`
-- Input: workspace `path` (source file); optional `targetPath` writes markdown to disk and returns `written to <targetPath>` instead of the body
+- Input: workspace `path` (source file); optional `timeoutMs` overrides `documentTimeoutMs` for that call
 
 ## Install target
 
@@ -45,13 +46,13 @@ npx tsc --noEmit
 
 ## Config (`Cfg` / `config.json`)
 
-Flat keys: `documentTimeoutMs`, `visionMode` (`"vellum"` | `"tesseract"`), `visionTimeoutMs`, `visionSystemPrompt`, `visionDefaultUserPrompt`. Defaults in `DEFAULT_CFG` (`src/plugin-config.ts`). Init merges host config with `Object.assign` — no schema validation; non-object `context.config` logs a warning.
+Flat keys: `documentTimeoutMs`, `visionMode` (`"vellum"` | `"tesseract"`), `visionSystemPrompt`, `visionDefaultUserPrompt`. Defaults in `DEFAULT_CFG` (`src/plugin-config.ts`). Init merges host config with `Object.assign` — no schema validation; non-object `context.config` logs a warning.
 
 ## Gotchas
 
 - Stale compiled `.js` next to `.ts` wins at load time — `.gitignore` ignores `*.js`; delete manually if you compile locally
-- `visionMode: "tesseract"` makes `createVisionLlmCall` return `null` immediately; markitdown-js uses Tesseract when available
-- Image LLM pattern mirrors `plugins/defaults/image-fallback/src/vision-caption.ts` — call site `"vision"`, provider from `getConfiguredProvider("vision")` (no separate profile picker)
-- markitdown-js `convert()` returns `{ title, textContent }`; `textContent` is the markdown body
+- `visionMode: "tesseract"` passes `{ provider: "tesseract", pdfMode: "auto" }` to cognipeer
+- `visionMode: "vellum"` passes `{ provider: "custom-vlm", pdfMode: "auto", vlm: { apiBase: "http://vellum-ocr.invalid/v1", ... } }`; cognipeer's OpenAI-shaped `fetch` is intercepted and forwarded to workspace vision (no HTTP, no apiKey in config)
+- `withVellumOcrFetch` wraps conversion with a ref-counted `fetch` patch; `cancelSignal` is captured in the patched function closure
 - `throwLogged()` logs via `CTX.log.error` then throws — used on validation and conversion failures in `src/`
 - Plugin dependency install is fail-soft (network errors logged, install continues); missing deps fail at module load

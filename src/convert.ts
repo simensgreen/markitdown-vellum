@@ -1,47 +1,48 @@
-import Markitdown from "markitdown-js";
+import { convertToMarkdown } from "@cognipeer/to-markdown";
 import {
   assertReadableWorkspaceFile,
   resolveWorkspacePath,
 } from "./path-validation.js";
-import { createVisionLlmCall } from "./vision-llm.js";
+import { buildCognipeerOcrOptions } from "./ocr-options.js";
+import {
+  vellumOcrFetchPatchNeeded,
+  withVellumOcrFetch,
+} from "./vellum-ocr-fetch.js";
 import { throwLogged } from "./ctx.js";
 
-export type ConvertInput = {
-  path: string;
-};
-
-export type ConvertOptions = {
-  signal: AbortSignal;
-};
-
-export type ConvertOutput = {
-  title: string | null;
-  markdown: string;
-};
+async function runConversion(resolvedPath: string): Promise<string> {
+  const ocrOptions = buildCognipeerOcrOptions();
+  return convertToMarkdown(resolvedPath, {
+    ocr: ocrOptions,
+  });
+}
 
 export async function convertDocument(
-  input: ConvertInput,
+  path: string,
   workingDir: string,
-  options: ConvertOptions,
-): Promise<ConvertOutput> {
-  const resolvedPath = resolveWorkspacePath(input.path, workingDir);
+  signal: AbortSignal,
+): Promise<string> {
+  const resolvedPath = resolveWorkspacePath(path, workingDir);
   await assertReadableWorkspaceFile(resolvedPath);
 
-  const converter = new Markitdown({
-    llmCall: createVisionLlmCall(options.signal),
-  });
+  if (signal.aborted) {
+    throwLogged("Conversion cancelled.", { path: resolvedPath });
+  }
 
-  const result = await converter.convert(resolvedPath);
+  const markdown = vellumOcrFetchPatchNeeded()
+    ? await withVellumOcrFetch(signal, () => runConversion(resolvedPath))
+    : await runConversion(resolvedPath);
 
-  if (result === null) {
+  if (signal.aborted) {
+    throwLogged("Conversion cancelled.", { path: resolvedPath });
+  }
+
+  if (markdown.trim().length === 0) {
     throwLogged(
       "Conversion returned no result. The file may be corrupt or unreadable.",
       { path: resolvedPath },
     );
   }
 
-  return {
-    title: result.title,
-    markdown: result.textContent,
-  };
+  return markdown;
 }

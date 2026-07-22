@@ -1,7 +1,6 @@
 {
   "documentTimeoutMs": 120000,
   "visionMode": "vellum",
-  "visionTimeoutMs": 60000,
   "visionSystemPrompt": "You are a document extraction assistant. Describe images accurately for markdown conversion. Include visible text, layout, charts, tables, and UI elements when present.",
   "visionDefaultUserPrompt": "Describe this image in detail for document conversion."
 }
